@@ -3,7 +3,6 @@ logs/
 *.csv
 .DS_Store
 datasets/
-*.npy
 *.tar.gz
 models/
 # Byte-compiled / optimized / DLL files
