@@ -1,4 +1,4 @@
-# Tensorflow Implemenentation of Yahoo's Open NSFW Model
+# Tensorflow Implementation of Yahoo's Open NSFW Model
 
 This repository contains an implementation of [Yahoo's Open NSFW Classifier](https://github.com/yahoo/open_nsfw) rewritten in tensorflow.
 
