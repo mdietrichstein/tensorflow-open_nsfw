@@ -17,7 +17,8 @@ IMAGE_LOADER_YAHOO = "yahoo"
 def main(argv):
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("input_file", help="Path to the input image file")
+    parser.add_argument("input_file", help="Path to the input image.\
+                        Only jpeg images are supported.")
     parser.add_argument("-m", "--model_weights", required=True,
                         help="Path to trained model weights file")
 
@@ -28,7 +29,7 @@ def main(argv):
 
     parser.add_argument("-t", "--input_type",
                         default=InputType.TENSOR.name.lower(),
-                        help="tensor input type",
+                        help="input type",
                         choices=[InputType.TENSOR.name.lower(),
                                  InputType.BASE64_JPEG.name.lower()])
 

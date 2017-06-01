@@ -10,7 +10,7 @@ class InputType(Enum):
 
 
 class OpenNsfwModel:
-    """Tensorflow implementation of Yahoo's open_nsfw model
+    """Tensorflow implementation of Yahoo's Open NSFW Model
 
     Original implementation:
     https://github.com/yahoo/open_nsfw
