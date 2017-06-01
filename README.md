@@ -52,7 +52,7 @@ __Note:__ Classification results may vary depending on the selected image loader
 
 __-t/--input_type__
 
-Determines if the model internally uses a float tensor (`tensor` - `[None, 224, 224, 3]` - default) or a base64 encoded string tensor (`base64_jpeg` - `[None, ]`) as input. Should not have an effect on the classification.
+Determines if the model internally uses a float tensor (`tensor` - `[None, 224, 224, 3]` - default) or a base64 encoded string tensor (`base64_jpeg` - `[None, ]`) as input. If `base64_jpeg` is used, then the `tensorflow` image loader will be used, regardless of the _-l/--image-loader_ argument.
 
 
 ### Tools
