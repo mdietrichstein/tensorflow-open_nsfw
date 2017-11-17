@@ -59,9 +59,13 @@ Determines if the model internally uses a float tensor (`tensor` - `[None, 224, 
 
 The `tools` folder contains some utility scripts to test the model.
 
-__export_model.py__
+__export_graph.py__
 
-Exports the model using the standard tensorflow export api (`SavedModel`). The export can be used to deploy the model on [Google Cloud ML Engine](https://cloud.google.com/ml-engine/docs/concepts/prediction-overview), [Tensorflow Serving]() or on mobile (haven't tried that one yet).
+Export the tensorflow graph and checkpoint. Freezes and optimizes the graph per default for improved inference and deployment usage (e.g. Android, iOS, etc.). Import the graph with `tf.import_graph_def`.
+
+__export_savedmodel.py__
+
+Exports the model using the tensorflow serving export api (`SavedModel`). The export can be used to deploy the model on [Google Cloud ML Engine](https://cloud.google.com/ml-engine/docs/concepts/prediction-overview), [Tensorflow Serving]() or on mobile (haven't tried that one yet).
 
 __create_predict_request.py__
 
