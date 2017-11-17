@@ -14,7 +14,10 @@ def create_yahoo_image_loader():
     from io import BytesIO
 
     def load_image(image_path):
-        im = Image.open(image_path)
+        pimg = open(image_path, 'rb').read()
+
+        img_data = pimg
+        im = Image.open(BytesIO(img_data))
 
         if im.mode != "RGB":
             im = im.convert('RGB')
@@ -37,9 +40,9 @@ def create_yahoo_image_loader():
         # RGB to BGR
         image = image[:, :, :: -1]
 
-        image = image * 255
-
-        image -= VGG_MEAN
+        image = image.astype(np.float32, copy=False)
+        image = image * 255.0
+        image -= np.array(VGG_MEAN, dtype=np.float32)
 
         image = np.expand_dims(image, axis=0)
         return image
