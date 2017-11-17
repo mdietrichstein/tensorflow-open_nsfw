@@ -47,11 +47,13 @@ class OpenNsfwModel:
 
         x = self.__batch_norm("bn_1", x)
         x = tf.nn.relu(x)
-        x = tf.layers.max_pooling2d(x, pool_size=3, strides=2)
+
+        x = tf.layers.max_pooling2d(x, pool_size=3, strides=2, padding='same')
 
         x = self.__conv_block(stage=0, block=0, inputs=x,
                               filter_depths=[32, 32, 128],
                               kernel_size=3, stride=1)
+
         x = self.__identity_block(stage=0, block=1, inputs=x,
                                   filter_depths=[32, 32, 128], kernel_size=3)
         x = self.__identity_block(stage=0, block=2, inputs=x,
@@ -91,24 +93,26 @@ class OpenNsfwModel:
                                   filter_depths=[256, 256, 1024],
                                   kernel_size=3)
 
-        x = tf.layers.average_pooling2d(x, pool_size=7,
-                                        strides=1, padding="valid")
-
+        x = tf.layers.average_pooling2d(x, pool_size=7,strides=1, padding="valid", name="pool")
         x = tf.reshape(x, shape=(-1, 1024))
 
         self.logits = self.__fully_connected(name="fc_nsfw",
                                              inputs=x, num_outputs=2)
-
         self.predictions = tf.nn.softmax(self.logits, name="predictions")
 
     """Get weights for layer with given name
     """
-    def __get_weights(self, layer_name):
+    def __get_weights(self, layer_name, field_name):
         if not layer_name in self.weights:
             raise ValueError("No weights for layer named '{}' found"
                              .format(layer_name))
 
-        return self.weights[layer_name]
+        w = self.weights[layer_name]
+        if not field_name in w:
+            raise ValueError("No entry for field '{}' in layer named '{}' found"
+                         .format(field_name, layer_name))
+                
+        return w[field_name]
 
     """Layer creation and weight initialization
     """
@@ -116,9 +120,9 @@ class OpenNsfwModel:
         return tf.layers.dense(
             inputs=inputs, units=num_outputs, name=name,
             kernel_initializer=tf.constant_initializer(
-                self.__get_weights(name)["weights"], dtype=tf.float32),
+                self.__get_weights(name, "weights"), dtype=tf.float32),
             bias_initializer=tf.constant_initializer(
-                self.__get_weights(name)["biases"], dtype=tf.float32))
+                self.__get_weights(name, "biases"), dtype=tf.float32))
 
     def __conv2d(self, name, inputs, filter_depth, kernel_size, stride=1,
                  padding="same", trainable=False):
@@ -128,21 +132,22 @@ class OpenNsfwModel:
             strides=(stride, stride), padding=padding,
             activation=None, trainable=trainable, name=name,
             kernel_initializer=tf.constant_initializer(
-                self.__get_weights(name)["weights"], dtype=tf.float32),
+                self.__get_weights(name, "weights"), dtype=tf.float32),
             bias_initializer=tf.constant_initializer(
-                self.__get_weights(name)["biases"], dtype=tf.float32))
+                self.__get_weights(name, "biases"), dtype=tf.float32))
 
     def __batch_norm(self, name, inputs, training=False):
         return tf.layers.batch_normalization(
             inputs, training=training, epsilon=self.bn_epsilon,
             gamma_initializer=tf.constant_initializer(
-                self.__get_weights(name)["scale"], dtype=tf.float32),
+                self.__get_weights(name, "scale"), dtype=tf.float32),
             beta_initializer=tf.constant_initializer(
-                self.__get_weights(name)["offset"], dtype=tf.float32),
+                self.__get_weights(name, "offset"), dtype=tf.float32),
             moving_mean_initializer=tf.constant_initializer(
-                self.__get_weights(name)["mean"], dtype=tf.float32),
+                self.__get_weights(name, "mean"), dtype=tf.float32),
             moving_variance_initializer=tf.constant_initializer(
-                self.__get_weights(name)["variance"], dtype=tf.float32))
+                self.__get_weights(name, "variance"), dtype=tf.float32),
+            name=name)
 
     """ResNet blocks
     """
@@ -154,6 +159,15 @@ class OpenNsfwModel:
         bn_name_base = "bn_stage{}_block{}_branch".format(stage, block)
         shortcut_name_post = "_stage{}_block{}_proj_shortcut" \
                              .format(stage, block)
+
+        shortcut = self.__conv2d(
+            name="conv{}".format(shortcut_name_post), stride=stride,
+            inputs=inputs, filter_depth=filter_depth3, kernel_size=1,
+            padding="same"
+        )
+
+        shortcut = self.__batch_norm("bn{}".format(shortcut_name_post),
+                                     shortcut)
 
         x = self.__conv2d(
             name="{}2a".format(conv_name_base),
@@ -177,15 +191,6 @@ class OpenNsfwModel:
             padding="same", stride=1
         )
         x = self.__batch_norm("{}2c".format(bn_name_base), x)
-
-        shortcut = self.__conv2d(
-            name="conv{}".format(shortcut_name_post), stride=stride,
-            inputs=inputs, filter_depth=filter_depth3, kernel_size=1,
-            padding="same"
-        )
-
-        shortcut = self.__batch_norm("bn{}".format(shortcut_name_post),
-                                     shortcut)
 
         x = tf.add(x, shortcut)
 
