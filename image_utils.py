@@ -63,19 +63,22 @@ def create_tensorflow_image_loader(session):
         image = tf.read_file(image_path)
         image = tf.image.decode_jpeg(image, channels=3)
 
-        # encode to float32 before attemtpting bilinear scaling
-        # to prevent garbage image.
-        # see https://github.com/tensorflow/tensorflow/issues/2228#issuecomment-292790995
-        image = tf.image.convert_image_dtype(image, tf.float32)
-        image = tf.image.resize_images(image, [256, 256],
-                                       method=tf.image.ResizeMethod.BILINEAR)
+        # rgb to bgr
+        image = tf.reverse(image, [2])
 
-        image = tf.image.crop_to_bounding_box(image, 16, 16, 224, 224)
-        image = tf.image.convert_image_dtype(image, tf.uint8)
+        # isotropic rescale
+        shape = tf.to_float(tf.shape(image)[:2])
+        min_length = tf.minimum(shape[0], shape[1])
+        new_shape = tf.to_int32((256 / min_length) * shape)
+        image = tf.image.resize_images(image, (new_shape[0], new_shape[1]))
 
-        image = tf.reverse(image, axis=[-1])
-        image = tf.cast(image, dtype=tf.float32)
-        image = tf.subtract(image, VGG_MEAN)
+        # cropping
+        offset = tf.to_int32((new_shape - 224) / 2)
+
+        image = tf.image.crop_to_bounding_box(image, offset[0], offset[1],
+                                              224, 224)
+
+        image = tf.to_float(image) - VGG_MEAN
 
         image_batch = tf.expand_dims(image, axis=0)
         return session.run(image_batch)
