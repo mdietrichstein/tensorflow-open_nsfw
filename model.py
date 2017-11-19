@@ -1,7 +1,7 @@
+import math
 import numpy as np
 import tensorflow as tf
 from enum import Enum, unique
-
 
 @unique
 class InputType(Enum):
@@ -43,12 +43,13 @@ class OpenNsfwModel:
             raise ValueError("invalid input type '{}'".format(input_type))
 
         x = self.__conv2d("conv_1", self.input_tensor, filter_depth=64,
-                          kernel_size=7, stride=2)
+                          kernel_size=7, stride=2, padding='valid')
 
         x = self.__batch_norm("bn_1", x)
         x = tf.nn.relu(x)
 
-        x = tf.layers.max_pooling2d(x, pool_size=3, strides=2, padding='same')
+        x = tf.pad(x, [[0,0], [1, 1], [1, 1], [0,0]], 'CONSTANT')
+        x = tf.layers.max_pooling2d(x, pool_size=3, strides=2, padding='valid')
 
         x = self.__conv_block(stage=0, block=0, inputs=x,
                               filter_depths=[32, 32, 128],
@@ -126,10 +127,22 @@ class OpenNsfwModel:
 
     def __conv2d(self, name, inputs, filter_depth, kernel_size, stride=1,
                  padding="same", trainable=False):
+
+        if padding.lower() == 'same':
+            if kernel_size > 1:
+                oh = inputs.get_shape().as_list()[1]
+                h = inputs.get_shape().as_list()[1]
+
+                p = int(math.floor(((oh - 1) * stride + kernel_size - h)//2))
+
+                inputs = tf.pad(inputs,
+                                [[0, 0], [p, p], [p, p], [0, 0]],
+                                'CONSTANT')
+
         return tf.layers.conv2d(
             inputs, filter_depth,
             kernel_size=(kernel_size, kernel_size),
-            strides=(stride, stride), padding=padding,
+            strides=(stride, stride), padding='valid',
             activation=None, trainable=trainable, name=name,
             kernel_initializer=tf.constant_initializer(
                 self.__get_weights(name, "weights"), dtype=tf.float32),
