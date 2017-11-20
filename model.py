@@ -139,7 +139,7 @@ class OpenNsfwModel:
                 oh = inputs.get_shape().as_list()[1]
                 h = inputs.get_shape().as_list()[1]
 
-                p = int(math.ceil(((oh - 1) * stride + kernel_size - h)//2))
+                p = int(math.floor(((oh - 1) * stride + kernel_size - h)//2))
 
                 inputs = tf.pad(inputs,
                                 [[0, 0], [p, p], [p, p], [0, 0]],
