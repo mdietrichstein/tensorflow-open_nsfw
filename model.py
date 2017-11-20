@@ -42,14 +42,18 @@ class OpenNsfwModel:
         else:
             raise ValueError("invalid input type '{}'".format(input_type))
 
-        x = self.__conv2d("conv_1", self.input_tensor, filter_depth=64,
+        x = self.input_tensor
+
+        # uses pad type 3 (CAFFE_LEGACY_POOLING) - https://github.com/Yangqing/caffe2/blob/master/caffe2/proto/caffe2_legacy.proto
+        x = tf.pad(x, [[0, 0], [1, 0], [1, 0], [0, 0]], 'SYMMETRIC')
+        x = self.__conv2d("conv_1", x, filter_depth=64,
                           kernel_size=7, stride=2, padding='valid')
 
         x = self.__batch_norm("bn_1", x)
         x = tf.nn.relu(x)
 
-        x = tf.pad(x, [[0,0], [1, 1], [1, 1], [0,0]], 'CONSTANT')
-        x = tf.layers.max_pooling2d(x, pool_size=3, strides=2, padding='valid')
+        x = tf.pad(x, [[0, 0], [1, 1], [1, 1], [0, 0]], 'CONSTANT')
+        x = tf.layers.max_pooling2d(x, pool_size=3, strides=2, padding='same')
 
         x = self.__conv_block(stage=0, block=0, inputs=x,
                               filter_depths=[32, 32, 128],
@@ -94,7 +98,9 @@ class OpenNsfwModel:
                                   filter_depths=[256, 256, 1024],
                                   kernel_size=3)
 
-        x = tf.layers.average_pooling2d(x, pool_size=7,strides=1, padding="valid", name="pool")
+        x = tf.layers.average_pooling2d(x, pool_size=7, strides=1,
+                                        padding="valid", name="pool")
+
         x = tf.reshape(x, shape=(-1, 1024))
 
         self.logits = self.__fully_connected(name="fc_nsfw",
@@ -128,16 +134,19 @@ class OpenNsfwModel:
     def __conv2d(self, name, inputs, filter_depth, kernel_size, stride=1,
                  padding="same", trainable=False):
 
-        if padding.lower() == 'same':
-            if kernel_size > 1:
+        if padding.lower() == 'same' and kernel_size > 1:
+            if kernel_size == 3:
                 oh = inputs.get_shape().as_list()[1]
                 h = inputs.get_shape().as_list()[1]
 
-                p = int(math.floor(((oh - 1) * stride + kernel_size - h)//2))
+                p = int(math.ceil(((oh - 1) * stride + kernel_size - h)//2))
 
                 inputs = tf.pad(inputs,
                                 [[0, 0], [p, p], [p, p], [0, 0]],
                                 'CONSTANT')
+            else:
+                raise Exception('unsupported kernel size for padding: "{}"'
+                                .format(kernel_size))
 
         return tf.layers.conv2d(
             inputs, filter_depth,
