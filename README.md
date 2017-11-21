@@ -45,8 +45,8 @@ __-l/--image-loader__
 
 The classification tool supports two different image loading mechanisms. 
 
-* `yahoo` (default) tries to replicate the image loading mechanism used by the original caffe implementation, differs a bit though. See __Caveats__ below.
-* `tensorflow` is an image loader which uses tensorflow  api's exclusively (no dependencies on `PIL`, `skimage`, etc.).
+* `yahoo` (default) replicates yahoo's original image loading and preprocessing. Use this option if you want the same results as with the original implementation
+* `tensorflow` is an image loader which uses tensorflow exclusively (no dependencies on `PIL`, `skimage`, etc.). Tries to replicate the image loading mechanism used by the original caffe implementation, differs a bit though due to different jpeg and resizing implementations. See [this issue](https://github.com/mdietrichstein/tensorflow-open_nsfw/issues/2#issuecomment-346125345) for details.
 
 __Note:__ Classification results may vary depending on the selected image loader!
 
@@ -70,9 +70,3 @@ Exports the model using the tensorflow serving export api (`SavedModel`). The ex
 __create_predict_request.py__
 
 Takes an input image and spits out an json file suitable for prediction requests to a Open NSFW Model deployed on [Google Cloud ML Engine](https://cloud.google.com/ml-engine/docs/concepts/prediction-overview) (`gcloud ml-engine predict`).
-
-### Caveats
-
-#### Image loading differences
-
-The classification results sometimes differ more and sometimes less from the original caffe implementation, depending on the image loader and input image. I haven't been able to figure out the cause for this yet. Any help on this would be appreciated.
