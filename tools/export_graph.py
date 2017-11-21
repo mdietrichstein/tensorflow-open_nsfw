@@ -1,9 +1,14 @@
 import os
+import sys
 import argparse
 
 import tensorflow as tf
 from tensorflow.python.tools import freeze_graph
 from tensorflow.python.tools import optimize_for_inference_lib
+
+sys.path.append((os.path.normpath(
+                 os.path.join(os.path.dirname(os.path.realpath(__file__)),
+                              '..'))))
 
 from model import OpenNsfwModel, InputType
 

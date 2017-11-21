@@ -1,4 +1,5 @@
 import os
+import sys
 import argparse
 
 import tensorflow as tf
@@ -12,6 +13,10 @@ from tensorflow.python.saved_model.signature_constants\
 
 from tensorflow.python.saved_model.signature_constants import PREDICT_INPUTS
 from tensorflow.python.saved_model.signature_constants import PREDICT_OUTPUTS
+
+sys.path.append((os.path.normpath(
+                 os.path.join(os.path.dirname(os.path.realpath(__file__)),
+                              '..'))))
 
 from model import OpenNsfwModel, InputType
 
