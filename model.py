@@ -3,6 +3,7 @@ import numpy as np
 import tensorflow as tf
 from enum import Enum, unique
 
+
 @unique
 class InputType(Enum):
     TENSOR = 1
@@ -44,15 +45,13 @@ class OpenNsfwModel:
 
         x = self.input_tensor
 
-        # uses pad type 3 (CAFFE_LEGACY_POOLING) - https://github.com/Yangqing/caffe2/blob/master/caffe2/proto/caffe2_legacy.proto
-        x = tf.pad(x, [[0, 0], [1, 0], [1, 0], [0, 0]], 'SYMMETRIC')
+        x = tf.pad(x, [[0, 0], [3, 3], [3, 3], [0, 0]], 'CONSTANT')
         x = self.__conv2d("conv_1", x, filter_depth=64,
                           kernel_size=7, stride=2, padding='valid')
 
         x = self.__batch_norm("bn_1", x)
         x = tf.nn.relu(x)
 
-        x = tf.pad(x, [[0, 0], [1, 1], [1, 1], [0, 0]], 'CONSTANT')
         x = tf.layers.max_pooling2d(x, pool_size=3, strides=2, padding='same')
 
         x = self.__conv_block(stage=0, block=0, inputs=x,
@@ -116,9 +115,9 @@ class OpenNsfwModel:
 
         w = self.weights[layer_name]
         if not field_name in w:
-            raise ValueError("No entry for field '{}' in layer named '{}' found"
-                         .format(field_name, layer_name))
-                
+            raise (ValueError("No entry for field '{}' in layer named '{}'"
+                              .format(field_name, layer_name)))
+
         return w[field_name]
 
     """Layer creation and weight initialization
@@ -135,7 +134,7 @@ class OpenNsfwModel:
                  padding="same", trainable=False):
 
         if padding.lower() == 'same' and kernel_size > 1:
-            if kernel_size == 3:
+            if kernel_size > 1:
                 oh = inputs.get_shape().as_list()[1]
                 h = inputs.get_shape().as_list()[1]
 
