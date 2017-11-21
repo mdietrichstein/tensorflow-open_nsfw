@@ -94,3 +94,12 @@ ENV/
 
 # Rope project settings
 .ropeproject
+
+# We dont want images
+*.jpg
+*.png
+*.jpeg
+*.zip
+*.gz
+*.xz
+*.tar
