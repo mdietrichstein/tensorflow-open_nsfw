@@ -61,7 +61,7 @@ The `tools` folder contains some utility scripts to test the model.
 
 __export_graph.py__
 
-Export the tensorflow graph and checkpoint. Freezes and optimizes the graph per default for improved inference and deployment usage (e.g. Android, iOS, etc.). Import the graph with `tf.import_graph_def`.
+Exports the tensorflow graph and checkpoint. Freezes and optimizes the graph per default for improved inference and deployment usage (e.g. Android, iOS, etc.). Import the graph with `tf.import_graph_def`.
 
 __export_savedmodel.py__
 
