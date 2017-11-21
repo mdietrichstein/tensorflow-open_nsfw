@@ -5,7 +5,7 @@ def create_yahoo_image_loader():
     """Yahoo open_nsfw image loading mechanism
 
     Approximation of the image loading mechanism defined in
-    https://github.com/yahoo/open_nsfw/blob/master/classify_nsfw.py#L40
+    https://github.com/yahoo/open_nsfw/blob/79f77bcd45076b000df71742a59d726aa4a36ad1/classify_nsfw.py#L40
     """
     import numpy as np
     import skimage
@@ -28,7 +28,8 @@ def create_yahoo_image_loader():
         imr.save(fh_im, format='JPEG')
         fh_im.seek(0)
 
-        image = skimage.img_as_float(skimage.io.imread(fh_im, as_grey=False)).astype(np.float32)
+        image = (skimage.img_as_float(skimage.io.imread(fh_im, as_grey=False))
+                        .astype(np.float32))
 
         H, W, _ = image.shape
         h, w = (224, 224)
@@ -53,34 +54,20 @@ def create_yahoo_image_loader():
 def create_tensorflow_image_loader(session):
     """Tensorflow image loader
 
-    Results seem to deviate quite a bit from yahoo image loader.
-    (TODO: Find out why)
-    Only support jpeg images.
+    Results seem to deviate a bit from yahoo image loader due to different
+    jpeg encoders/decoders and different image resize implementations between
+    PIL, skimage and tensorflow
+
+    Only supports jpeg images.
     """
     import tensorflow as tf
 
     def load_image(image_path):
         image = tf.read_file(image_path)
-        image = tf.image.decode_jpeg(image, channels=3)
-
-        # rgb to bgr
-        image = tf.reverse(image, [2])
-
-        # isotropic rescale
-        shape = tf.to_float(tf.shape(image)[:2])
-        min_length = tf.minimum(shape[0], shape[1])
-        new_shape = tf.to_int32((256 / min_length) * shape)
-        image = tf.image.resize_images(image, (new_shape[0], new_shape[1]))
-
-        # cropping
-        offset = tf.to_int32((new_shape - 224) / 2)
-
-        image = tf.image.crop_to_bounding_box(image, offset[0], offset[1],
-                                              224, 224)
-
-        image = tf.to_float(image) - VGG_MEAN
+        image = __tf_jpeg_process(image)
 
         image_batch = tf.expand_dims(image, axis=0)
+
         return session.run(image_batch)
 
     return load_image
@@ -89,27 +76,53 @@ def create_tensorflow_image_loader(session):
 def load_base64_tensor(_input):
     import tensorflow as tf
 
-    def decode_and_crop(base64):
+    def decode_and_process(base64):
         _bytes = tf.decode_base64(base64)
-        _image = tf.image.decode_jpeg(_bytes, channels=3,
-                                      fancy_upscaling=False)
-        _image = tf.image.convert_image_dtype(_image, tf.float32)
-        _image = tf.image.resize_images(_image, [256, 256],
-                                        method=tf.image.ResizeMethod.BILINEAR)
-        _image = tf.image.crop_to_bounding_box(_image, 16, 16, 224, 224)
+        _image = __tf_jpeg_process(_bytes)
 
         return _image
 
     # we have to do some preprocessing with map_fn, since functions like
     # decode_*, resize_images and crop_to_bounding_box do not support
     # processing of batches
-    image = tf.map_fn(decode_and_crop, _input,
+    image = tf.map_fn(decode_and_process, _input,
                       back_prop=False, dtype=tf.float32)
 
-    image = tf.image.convert_image_dtype(image, tf.uint8)
+    return image
 
-    image = tf.reverse(image, axis=[-1])
+
+def __tf_jpeg_process(data):
+    import tensorflow as tf
+
+    # The whole jpeg encode/decode dance is neccessary to generate a result
+    # that matches the original model's (caffe) preprocessing
+    image = tf.image.decode_jpeg(data, channels=3,
+                                 fancy_upscaling=True,
+                                 dct_method="INTEGER_FAST")
+
+    image = tf.image.convert_image_dtype(image, tf.float32, saturate=True)
+    image = tf.image.resize_images(image, (256, 256),
+                                   method=tf.image.ResizeMethod.BILINEAR,
+                                   align_corners=True)
+
+    image = tf.image.convert_image_dtype(image, tf.uint8, saturate=True)
+
+    image = tf.image.encode_jpeg(image, format='', quality=75,
+                                 progressive=False, optimize_size=False,
+                                 chroma_downsampling=True,
+                                 density_unit=None,
+                                 x_density=None, y_density=None,
+                                 xmp_metadata=None)
+
+    image = tf.image.decode_jpeg(image, channels=3,
+                                 fancy_upscaling=False,
+                                 dct_method="INTEGER_ACCURATE")
+
     image = tf.cast(image, dtype=tf.float32)
-    image = tf.subtract(image, VGG_MEAN)
+
+    image = tf.image.crop_to_bounding_box(image, 16, 16, 224, 224)
+
+    image = tf.reverse(image, axis=[2])
+    image -= VGG_MEAN
 
     return image
