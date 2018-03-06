@@ -1,4 +1,4 @@
-VGG_MEAN = [104, 117, 123]
+VGG_MEAN = [123, 117, 104]
 
 
 def create_yahoo_image_loader():
