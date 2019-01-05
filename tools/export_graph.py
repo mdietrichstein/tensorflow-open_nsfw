@@ -24,13 +24,16 @@ if __name__ == "__main__":
     parser.add_argument("-m", "--model_weights", required=True,
                         help="Path to trained model weights file")
 
-    parser.add_argument("-o", "--optimize", required=False, default=True,
+    parser.add_argument("-o", "--optimize", action='store_true',
+                        default=False,
                         help="Optimize graph for inference")
 
-    parser.add_argument("-f", "--freeze", required=False, default=True,
+    parser.add_argument("-f", "--freeze", action='store_true',
+                        required=False, default=False,
                         help="Freeze graph: convert variables to ops")
 
-    parser.add_argument("-b", "--binary", required=False, default=True,
+    parser.add_argument("-t", "--text", action='store_true',
+                        required=False, default=False,
                         help="Write graph as binary (.pb) or text (pbtext)")
 
     args = parser.parse_args()
