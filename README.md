@@ -6,7 +6,7 @@ The original caffe weights have been extracted using [Caffe to TensorFlow](https
 
 ## Prerequisites
 
-All code should be compatible with `Python 3.6` and `Tensorflow 1.x`. The model implementation can be found in `model.py`.
+All code should be compatible with `Python 3.6` and `Tensorflow 1.x` (tested with 1.12). The model implementation can be found in `model.py`.
 
 ### Usage
 
@@ -69,4 +69,4 @@ Exports the model using the tensorflow serving export api (`SavedModel`). The ex
 
 __create_predict_request.py__
 
-Takes an input image and spits out an json file suitable for prediction requests to a Open NSFW Model deployed on [Google Cloud ML Engine](https://cloud.google.com/ml-engine/docs/concepts/prediction-overview) (`gcloud ml-engine predict`).
+Takes an input image and spits out an json file suitable for prediction requests to a Open NSFW Model deployed with [Google Cloud ML Engine](https://cloud.google.com/ml-engine/docs/concepts/prediction-overview) (`gcloud ml-engine predict`) or [tensorflow-serving](https://www.tensorflow.org/serving/).

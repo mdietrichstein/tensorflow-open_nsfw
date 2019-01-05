@@ -10,9 +10,16 @@ from tensorflow.python.saved_model.signature_constants import PREDICT_INPUTS
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("input_file", help="Path to the input image file")
+    parser.add_argument("-t", "--target", required=True,
+                        choices=['ml-engine', 'tf-serving'],
+                        help="Create json for ml-engine or tensorflow-serving")
 
     args = parser.parse_args()
+    target = args.target
 
     image_b64 = base64.urlsafe_b64encode(open(args.input_file, "rb").read())
 
-    print(json.dumps({PREDICT_INPUTS: image_b64.decode("ascii")}))
+    if target == "ml-engine":
+        print(json.dumps({PREDICT_INPUTS: image_b64.decode("ascii")}))
+    elif target == "tf-serving":
+        print(json.dumps({"instances": [image_b64.decode("ascii")]}))
