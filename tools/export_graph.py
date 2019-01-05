@@ -24,6 +24,12 @@ if __name__ == "__main__":
     parser.add_argument("-m", "--model_weights", required=True,
                         help="Path to trained model weights file")
 
+    parser.add_argument("-i", "--input_type", required=True,
+                        default=InputType.TENSOR.name.lower(),
+                        help="Input type",
+                        choices=[InputType.TENSOR.name.lower(),
+                                 InputType.BASE64_JPEG.name.lower()])
+
     parser.add_argument("-o", "--optimize", action='store_true',
                         default=False,
                         help="Optimize graph for inference")
@@ -43,7 +49,8 @@ if __name__ == "__main__":
     export_base_path = args.target
     do_freeze = args.freeze
     do_optimize = args.optimize
-    as_binary = args.binary
+    as_binary =  not args.text
+    input_type = InputType[args.input_type.upper()]
 
     input_node_name = 'input'
     output_node_name = 'predictions'
@@ -65,7 +72,7 @@ if __name__ == "__main__":
 
     with tf.Session() as sess:
         model.build(weights_path=args.model_weights,
-                    input_type=InputType.BASE64_JPEG)
+                    input_type=input_type)
 
         sess.run(tf.global_variables_initializer())
 

@@ -22,13 +22,17 @@ from model import OpenNsfwModel, InputType
 
 """Builds a SavedModel which can be used for deployment with
 gcloud ml-engine, tensorflow-serving, ...
-
-The exported model takes an base64 encoded string tensor as input
 """
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
     parser.add_argument("target", help="output directory")
+
+    parser.add_argument("-i", "--input_type", required=True,
+                        default=InputType.TENSOR.name.lower(),
+                        help="Input type",
+                        choices=[InputType.TENSOR.name.lower(),
+                                 InputType.BASE64_JPEG.name.lower()])
 
     parser.add_argument("-v", "--export_version",
                         help="export model version",
@@ -43,12 +47,13 @@ if __name__ == "__main__":
 
     export_base_path = args.target
     export_version = args.export_version
+    input_type = InputType[args.input_type.upper()]
 
     export_path = os.path.join(export_base_path, export_version)
 
     with tf.Session() as sess:
         model.build(weights_path=args.model_weights,
-                    input_type=InputType.BASE64_JPEG)
+                    input_type=input_type)
 
         sess.run(tf.global_variables_initializer())
 

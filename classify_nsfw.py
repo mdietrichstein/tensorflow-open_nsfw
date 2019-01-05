@@ -28,7 +28,7 @@ def main(argv):
                         help="image loading mechanism",
                         choices=[IMAGE_LOADER_YAHOO, IMAGE_LOADER_TENSORFLOW])
 
-    parser.add_argument("-t", "--input_type",
+    parser.add_argument("-i", "--input_type",
                         default=InputType.TENSOR.name.lower(),
                         help="input type",
                         choices=[InputType.TENSOR.name.lower(),

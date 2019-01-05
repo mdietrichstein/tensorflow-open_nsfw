@@ -37,7 +37,7 @@ optional arguments:
                         Path to trained model weights file
   -l {yahoo,tensorflow}, --image_loader {yahoo,tensorflow}
                         image loading mechanism
-  -t {tensor,base64_jpeg}, --input_type {tensor,base64_jpeg}
+  -i {tensor,base64_jpeg}, --input_type {tensor,base64_jpeg}
                         input type
 ```
 
@@ -50,7 +50,7 @@ The classification tool supports two different image loading mechanisms.
 
 __Note:__ Classification results may vary depending on the selected image loader!
 
-__-t/--input_type__
+__-i/--input_type__
 
 Determines if the model internally uses a float tensor (`tensor` - `[None, 224, 224, 3]` - default) or a base64 encoded string tensor (`base64_jpeg` - `[None, ]`) as input. If `base64_jpeg` is used, then the `tensorflow` image loader will be used, regardless of the _-l/--image-loader_ argument.
 
@@ -59,14 +59,19 @@ Determines if the model internally uses a float tensor (`tensor` - `[None, 224, 
 
 The `tools` folder contains some utility scripts to test the model.
 
-__export_graph.py__
+__create_predict_request.py__
 
-Exports the tensorflow graph and checkpoint. Freezes and optimizes the graph per default for improved inference and deployment usage (e.g. Android, iOS, etc.). Import the graph with `tf.import_graph_def`.
+Takes an input image and generates a json file suitable for prediction requests to a Open NSFW Model deployed with [Google Cloud ML Engine](https://cloud.google.com/ml-engine/docs/concepts/prediction-overview) (`gcloud ml-engine predict`) or [tensorflow-serving](https://www.tensorflow.org/serving/).
+
 
 __export_savedmodel.py__
 
 Exports the model using the tensorflow serving export api (`SavedModel`). The export can be used to deploy the model on [Google Cloud ML Engine](https://cloud.google.com/ml-engine/docs/concepts/prediction-overview), [Tensorflow Serving]() or on mobile (haven't tried that one yet).
 
-__create_predict_request.py__
+__export_tflite.py__
 
-Takes an input image and spits out an json file suitable for prediction requests to a Open NSFW Model deployed with [Google Cloud ML Engine](https://cloud.google.com/ml-engine/docs/concepts/prediction-overview) (`gcloud ml-engine predict`) or [tensorflow-serving](https://www.tensorflow.org/serving/).
+Exports the model in [TFLite format](https://www.tensorflow.org/lite/). Use this one if you want to run inference on mobile or IoT devices. Please not that the `base64_jpeg` input type does not work with TFLite since the standard runtime is missing a number of required tensorflow operations.
+
+__export_graph.py__
+
+Exports the tensorflow graph and checkpoint. Freezes and optimizes the graph per default for improved inference and deployment usage (e.g. Android, iOS, etc.). Import the graph with `tf.import_graph_def`.

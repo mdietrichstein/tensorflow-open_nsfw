@@ -12,8 +12,6 @@ from model import OpenNsfwModel, InputType
 
 """Exports a tflite version of tensorflow-open_nsfw
 
-The exported model takes an base64 encoded string tensor as input.
-
 Note: The standard TFLite runtime does not support all required ops.
 You will have to implement the missing ones by yourself.
 """
@@ -21,6 +19,12 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
     parser.add_argument("target", help="output filename, e.g. 'open_nsfw.tflite'")
+
+    parser.add_argument("-i", "--input_type", required=True,
+                        default=InputType.TENSOR.name.lower(),
+                        help="Input type. Warning: base64_jpeg does not work with the standard TFLite runtime since a lot of operations are not supported",
+                        choices=[InputType.TENSOR.name.lower(),
+                                 InputType.BASE64_JPEG.name.lower()])
 
     parser.add_argument("-m", "--model_weights", required=True,
                         help="Path to trained model weights file")
@@ -30,10 +34,11 @@ if __name__ == "__main__":
     model = OpenNsfwModel()
 
     export_path = args.target
+    input_type = InputType[args.input_type.upper()]
 
     with tf.Session() as sess:
         model.build(weights_path=args.model_weights,
-                    input_type=InputType.BASE64_JPEG)
+                    input_type=input_type)
 
         sess.run(tf.global_variables_initializer())
 
