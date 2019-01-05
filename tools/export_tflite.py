@@ -12,7 +12,7 @@ from model import OpenNsfwModel, InputType
 
 """Exports a tflite version of tensorflow-open_nsfw
 
-Note: The standard TFLite runtime does not support all required ops.
+Note: The standard TFLite runtime does not support all required ops when using the base64_jpeg input type.
 You will have to implement the missing ones by yourself.
 """
 if __name__ == "__main__":
