@@ -19,6 +19,7 @@ def main(argv):
 
     parser.add_argument("input_file", help="Path to the input image.\
                         Only jpeg images are supported.")
+
     parser.add_argument("-m", "--model_weights", required=True,
                         help="Path to trained model weights file")
 
@@ -46,7 +47,7 @@ def main(argv):
 
         if input_type == InputType.TENSOR:
             if args.image_loader == IMAGE_LOADER_TENSORFLOW:
-                fn_load_image = create_tensorflow_image_loader(sess)
+                fn_load_image = create_tensorflow_image_loader(tf.Session(graph=tf.Graph()))
             else:
                 fn_load_image = create_yahoo_image_loader()
         elif input_type == InputType.BASE64_JPEG:

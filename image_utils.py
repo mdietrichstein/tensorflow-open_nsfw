@@ -1,7 +1,7 @@
 VGG_MEAN = [104, 117, 123]
 
 
-def create_yahoo_image_loader():
+def create_yahoo_image_loader(expand_dims=True):
     """Yahoo open_nsfw image loading mechanism
 
     Approximation of the image loading mechanism defined in
@@ -45,20 +45,28 @@ def create_yahoo_image_loader():
         image = image * 255.0
         image -= np.array(VGG_MEAN, dtype=np.float32)
 
-        image = np.expand_dims(image, axis=0)
+        if expand_dims:
+            image = np.expand_dims(image, axis=0)
+
         return image
 
     return load_image
 
 
-def create_tensorflow_image_loader(session):
+def create_tensorflow_image_loader(session, expand_dims=True,
+                                   options=None,
+                                   run_metadata=None):
     """Tensorflow image loader
 
-    Results seem to deviate a bit from yahoo image loader due to different
-    jpeg encoders/decoders and different image resize implementations between
-    PIL, skimage and tensorflow
+    Results seem to deviate quite a bit from yahoo image loader due to
+    different jpeg encoders/decoders and different image resize
+    implementations between PIL, skimage and tensorflow
 
     Only supports jpeg images.
+
+    Relevant tensorflow issues:
+        * https://github.com/tensorflow/tensorflow/issues/6720
+        * https://github.com/tensorflow/tensorflow/issues/12753
     """
     import tensorflow as tf
 
@@ -66,9 +74,15 @@ def create_tensorflow_image_loader(session):
         image = tf.read_file(image_path)
         image = __tf_jpeg_process(image)
 
-        image_batch = tf.expand_dims(image, axis=0)
+        if expand_dims:
+            image_batch = tf.expand_dims(image, axis=0)
+            return session.run(image_batch,
+                               options=options,
+                               run_metadata=run_metadata)
 
-        return session.run(image_batch)
+        return session.run(image,
+                           options=options,
+                           run_metadata=run_metadata)
 
     return load_image
 
@@ -96,6 +110,7 @@ def __tf_jpeg_process(data):
 
     # The whole jpeg encode/decode dance is neccessary to generate a result
     # that matches the original model's (caffe) preprocessing
+    # (as good as possible)
     image = tf.image.decode_jpeg(data, channels=3,
                                  fancy_upscaling=True,
                                  dct_method="INTEGER_FAST")

@@ -9,6 +9,7 @@ models/
 __pycache__/
 *.py[cod]
 *$py.class
+eval/dataset
 
 # C extensions
 *.so
