@@ -70,7 +70,7 @@ Exports the model using the tensorflow serving export api (`SavedModel`). The ex
 
 __export_tflite.py__
 
-Exports the model in [TFLite format](https://www.tensorflow.org/lite/). Use this one if you want to run inference on mobile or IoT devices. Please not that the `base64_jpeg` input type does not work with TFLite since the standard runtime is missing a number of required tensorflow operations.
+Exports the model in [TFLite format](https://www.tensorflow.org/lite/). Use this one if you want to run inference on mobile or IoT devices. Please note that the `base64_jpeg` input type does not work with TFLite since the standard runtime lacks a number of required tensorflow operations.
 
 __export_graph.py__
 
