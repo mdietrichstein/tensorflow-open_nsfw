@@ -28,8 +28,8 @@ def create_yahoo_image_loader(expand_dims=True):
         imr.save(fh_im, format='JPEG')
         fh_im.seek(0)
 
-        image = (skimage.img_as_float(skimage.io.imread(fh_im, as_grey=False))
-                        .astype(np.float32))
+        image = (skimage.img_as_float(skimage.io.imread(
+            fh_im, as_grey=False)).astype(np.float32))
 
         H, W, _ = image.shape
         h, w = (224, 224)
@@ -39,7 +39,7 @@ def create_yahoo_image_loader(expand_dims=True):
         image = image[h_off:h_off + h, w_off:w_off + w, :]
 
         # RGB to BGR
-        image = image[:, :, :: -1]
+        image = image[:, :, ::-1]
 
         image = image.astype(np.float32, copy=False)
         image = image * 255.0
@@ -53,7 +53,8 @@ def create_yahoo_image_loader(expand_dims=True):
     return load_image
 
 
-def create_tensorflow_image_loader(session, expand_dims=True,
+def create_tensorflow_image_loader(session,
+                                   expand_dims=True,
                                    options=None,
                                    run_metadata=None):
     """Tensorflow image loader
@@ -76,13 +77,10 @@ def create_tensorflow_image_loader(session, expand_dims=True,
 
         if expand_dims:
             image_batch = tf.expand_dims(image, axis=0)
-            return session.run(image_batch,
-                               options=options,
-                               run_metadata=run_metadata)
+            return session.run(
+                image_batch, options=options, run_metadata=run_metadata)
 
-        return session.run(image,
-                           options=options,
-                           run_metadata=run_metadata)
+        return session.run(image, options=options, run_metadata=run_metadata)
 
     return load_image
 
@@ -99,8 +97,8 @@ def load_base64_tensor(_input):
     # we have to do some preprocessing with map_fn, since functions like
     # decode_*, resize_images and crop_to_bounding_box do not support
     # processing of batches
-    image = tf.map_fn(decode_and_process, _input,
-                      back_prop=False, dtype=tf.float32)
+    image = tf.map_fn(
+        decode_and_process, _input, back_prop=False, dtype=tf.float32)
 
     return image
 
@@ -111,27 +109,34 @@ def __tf_jpeg_process(data):
     # The whole jpeg encode/decode dance is neccessary to generate a result
     # that matches the original model's (caffe) preprocessing
     # (as good as possible)
-    image = tf.image.decode_jpeg(data, channels=3,
-                                 fancy_upscaling=True,
-                                 dct_method="INTEGER_FAST")
+    image = tf.image.decode_jpeg(
+        data, channels=3, fancy_upscaling=True, dct_method="INTEGER_FAST")
 
     image = tf.image.convert_image_dtype(image, tf.float32, saturate=True)
-    image = tf.image.resize_images(image, (256, 256),
-                                   method=tf.image.ResizeMethod.BILINEAR,
-                                   align_corners=True)
+    image = tf.image.resize_images(
+        image, (256, 256),
+        method=tf.image.ResizeMethod.BILINEAR,
+        align_corners=True)
 
     image = tf.image.convert_image_dtype(image, tf.uint8, saturate=True)
 
-    image = tf.image.encode_jpeg(image, format='', quality=75,
-                                 progressive=False, optimize_size=False,
-                                 chroma_downsampling=True,
-                                 density_unit=None,
-                                 x_density=None, y_density=None,
-                                 xmp_metadata=None)
+    image = tf.image.encode_jpeg(
+        image,
+        format='',
+        quality=75,
+        progressive=False,
+        optimize_size=False,
+        chroma_downsampling=True,
+        density_unit=None,
+        x_density=None,
+        y_density=None,
+        xmp_metadata=None)
 
-    image = tf.image.decode_jpeg(image, channels=3,
-                                 fancy_upscaling=False,
-                                 dct_method="INTEGER_ACCURATE")
+    image = tf.image.decode_jpeg(
+        image,
+        channels=3,
+        fancy_upscaling=False,
+        dct_method="INTEGER_ACCURATE")
 
     image = tf.cast(image, dtype=tf.float32)
 
