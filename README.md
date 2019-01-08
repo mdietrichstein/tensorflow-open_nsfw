@@ -8,6 +8,9 @@ The original caffe weights have been extracted using [Caffe to TensorFlow](https
 
 All code should be compatible with `Python 3.6` and `Tensorflow 1.x` (tested with 1.12). The model implementation can be found in `model.py`.
 
+1. `pip3 install -U pipenv`
+2. `pipenv install`
+
 ### Usage
 
 ```
