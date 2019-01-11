@@ -1,7 +1,9 @@
-import sys
-import operator
 import argparse
+import operator
+import sys
+
 import numpy as np
+
 from scipy import stats
 
 
@@ -55,11 +57,12 @@ def test(first, second):
 def main(argv):
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("original",
-                        help="File containing base classifications")
+    parser.add_argument(
+        "original", help="File containing base classifications")
 
-    parser.add_argument("other",
-                        help="File containing classifications to compare to\
+    parser.add_argument(
+        "other",
+        help="File containing classifications to compare to\
                         base results")
 
     args = parser.parse_args()
@@ -85,6 +88,7 @@ def main(argv):
     print()
     print('NSFW:')
     print(test(original_classifications[:, 1], other_classifications[:, 1]))
+
 
 if __name__ == "__main__":
     main(sys.argv)
