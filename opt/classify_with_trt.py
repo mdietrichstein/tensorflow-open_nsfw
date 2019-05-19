@@ -11,14 +11,7 @@ sys.path.append((os.path.normpath(
                               '..'))))
 
 from image_utils import create_yahoo_image_loader
-
-
-def get_frozen_graph(graph_file):
-    """Read Frozen Graph file from disk."""
-    with tf.gfile.FastGFile(graph_file, "rb") as f:
-        graph_def = tf.GraphDef()
-        graph_def.ParseFromString(f.read())
-    return graph_def
+from nsfw_trt_utils import get_frozen_graph
 
 
 if __name__ == "__main__":
@@ -42,14 +35,6 @@ if __name__ == "__main__":
     tf_config.gpu_options.allow_growth = True
     tf_sess = tf.Session(config=tf_config)
     tf.import_graph_def(trt_graph, name='')
-
-    # Get graph input size
-    for node in trt_graph.node:
-        if 'input' in node.name:
-            size = node.attr['shape'].shape
-            image_size = [size.dim[i].size for i in range(1, 4)]
-            break
-    print("image_size: {}".format(image_size))
 
     # input and output tensor names.
     input_tensor_name = input_node_name + ":0"
