@@ -2,6 +2,7 @@
 import os
 import sys
 import tensorflow as tf
+import tensorflow.contrib.tensorrt as trt
 
 import argparse
 import datetime
@@ -72,4 +73,3 @@ if __name__ == "__main__":
             progress_bar.update(1)
     k = datetime.datetime.now() - begin
     print("load & predict time: %d s" % k.total_seconds())
-

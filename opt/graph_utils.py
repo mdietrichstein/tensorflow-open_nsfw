@@ -1,5 +1,4 @@
 import tensorflow as tf
-import tensorflow.contrib.tensorrt
 
 
 def get_frozen_graph(graph_file):

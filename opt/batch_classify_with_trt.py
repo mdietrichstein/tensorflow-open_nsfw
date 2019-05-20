@@ -13,7 +13,7 @@ from tqdm import tqdm
 
 from model import OpenNsfwModel, InputType
 from image_utils import create_yahoo_image_loader
-from nsfw_trt_utils import get_frozen_graph
+from graph_utils import get_frozen_graph
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 tf.logging.set_verbosity(tf.logging.ERROR)
