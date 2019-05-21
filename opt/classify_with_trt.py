@@ -11,7 +11,7 @@ sys.path.append((os.path.normpath(
                               '..'))))
 
 from image_utils import create_yahoo_image_loader
-from nsfw_trt_utils import get_frozen_graph
+from graph_utils import get_frozen_graph
 
 
 if __name__ == "__main__":
