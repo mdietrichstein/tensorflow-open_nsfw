@@ -20,7 +20,7 @@ if __name__ == "__main__":
 
     parser.add_argument("target", help="output filename, e.g. 'open_nsfw.tflite'")
 
-    parser.add_argument("-i", "--input_type", required=True,
+    parser.add_argument("-i", "--input_type", required=False,
                         default=InputType.TENSOR.name.lower(),
                         help="Input type. Warning: base64_jpeg does not work with the standard TFLite runtime since a lot of operations are not supported",
                         choices=[InputType.TENSOR.name.lower(),
