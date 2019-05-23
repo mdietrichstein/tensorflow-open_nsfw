@@ -47,7 +47,7 @@ def main(argv):
 
         if input_type == InputType.TENSOR:
             if args.image_loader == IMAGE_LOADER_TENSORFLOW:
-                fn_load_image = create_tensorflow_image_loader(tf.Session(graph=tf.Graph()))
+                fn_load_image = create_tensorflow_image_loader(tf.Session(graph=tf.get_default_graph()))
             else:
                 fn_load_image = create_yahoo_image_loader()
         elif input_type == InputType.BASE64_JPEG:
