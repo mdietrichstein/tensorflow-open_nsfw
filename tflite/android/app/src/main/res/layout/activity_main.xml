@@ -38,7 +38,7 @@
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="wrap_content"
         android:gravity="center"
         android:orientation="vertical"
         android:padding="10dp" >
@@ -49,4 +49,21 @@
             android:layout_height="wrap_content" />
     </LinearLayout>
 
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:padding="10dp" >
+
+        <TextView
+            android:text="please put test images to /sdcard/images/ before benchmark"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+        <Button
+            android:id="@+id/btnBenchmarkImages"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="benchmark /sdcard/images/" />
+    </LinearLayout>
 </LinearLayout>

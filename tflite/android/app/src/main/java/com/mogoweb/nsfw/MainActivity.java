@@ -5,6 +5,8 @@ import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.os.Environment;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.annotation.UiThread;
@@ -25,6 +27,7 @@ import com.mogoweb.nsfw.tflite.Classifier;
 import com.mogoweb.nsfw.tflite.Classifier.Device;
 import com.mogoweb.nsfw.tflite.Classifier.Model;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.List;
 
@@ -81,6 +84,36 @@ public class MainActivity extends AppCompatActivity
             }
         });
         tvResult = (TextView)findViewById(R.id.tvResult);
+
+        Button btnBenchmarkImages = (Button)findViewById(R.id.btnBenchmarkImages);
+        btnBenchmarkImages.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                boolean result = Utility.checkPermission(MainActivity.this);
+                if (result) {
+                    File extStore = Environment.getExternalStorageDirectory();
+                    // ==> /storage/emulated/0/note.txt
+                    String imagesPath = extStore.getAbsolutePath() + "/images";
+                    File directory = new File(imagesPath);
+                    File[] files = directory.listFiles();
+                    LOGGER.i("images: "+ files.length);
+                    for (File imageFile : files) {
+                        LOGGER.i("FileName:" + imageFile.getName());
+                        Bitmap bitmap = BitmapFactory.decodeFile(imageFile.getAbsolutePath());
+                        Bitmap bm = Bitmap.createScaledBitmap(bitmap, classifier.getImageSizeX(), classifier.getImageSizeX(), false);
+                        final List<Classifier.Recognition> results = classifier.recognizeImage(bm);
+                        if (results != null) {
+                            Classifier.Recognition recognition = results.get(0);
+                            LOGGER.i(recognition.getTitle() + ":" + String.format("%f", recognition.getConfidence()));
+
+                            Classifier.Recognition recognition1 = results.get(1);
+                            LOGGER.i(recognition1.getTitle() + ":" + String.format("%f", recognition1.getConfidence()));
+                        }
+                    }
+                }
+
+            }
+        });
 
         recreateClassifier(getModel(), getDevice(), getNumThreads());
     }

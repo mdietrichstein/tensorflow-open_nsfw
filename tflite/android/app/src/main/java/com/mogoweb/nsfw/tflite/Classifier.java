@@ -51,6 +51,9 @@ public abstract class Classifier {
         GPU
     }
 
+    protected static final int VGG_MEAN[] = {123, 117, 104};
+
+
     /** Number of results to show in the UI. */
     private static final int MAX_RESULTS = 3;
 
