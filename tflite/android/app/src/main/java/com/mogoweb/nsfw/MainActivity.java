@@ -45,7 +45,7 @@ public class MainActivity extends AppCompatActivity
 
     private View mLayout;
 
-    private Model model = Model.QUANTIZED;
+    private Model model = Model.FLOAT;
     private Device device = Device.CPU;
     private int numThreads = -1;
 
@@ -188,7 +188,7 @@ public class MainActivity extends AppCompatActivity
                 Bitmap bitmap = MediaStore.Images.Media.getBitmap(getApplicationContext().getContentResolver(), data.getData());
                 Bitmap bm = Bitmap.createScaledBitmap(bitmap, classifier.getImageSizeX(), classifier.getImageSizeX(), false);
                 final List<Classifier.Recognition> results = classifier.recognizeImage(bm);
-                // tvResult.setText(textToShow);
+                showResults(results);
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -199,27 +199,29 @@ public class MainActivity extends AppCompatActivity
         Bitmap bm = (Bitmap) data.getExtras().get("data");
 
         final List<Classifier.Recognition> results = classifier.recognizeImage(bm);
-        // tvResult.setText(textToShow);
+        showResults(results);
     }
 
     @UiThread
     protected void showResults(List<Classifier.Recognition> results) {
         if (results != null) {
+            String res = "";
             Classifier.Recognition recognition = results.get(0);
             if (recognition != null) {
-                if (recognition.getTitle() != null) tvResult.setText(recognition.getTitle());
+                if (recognition.getTitle() != null)
+                    res = res + recognition.getTitle() + ":";
                 if (recognition.getConfidence() != null)
-                    tvResult.setText(
-                            String.format("%.2f", (100 * recognition.getConfidence())) + "%");
+                    res = res + String.format("%.2f", (100 * recognition.getConfidence())) + "% ";
             }
 
             Classifier.Recognition recognition1 = results.get(1);
             if (recognition1 != null) {
-                if (recognition1.getTitle() != null) tvResult.setText(recognition1.getTitle());
+                if (recognition1.getTitle() != null)
+                    res = res + recognition1.getTitle() + ":";
                 if (recognition1.getConfidence() != null)
-                    tvResult.setText(
-                            String.format("%.2f", (100 * recognition1.getConfidence())) + "%");
+                    res = res + String.format("%.2f", (100 * recognition1.getConfidence())) + "%";
             }
+            tvResult.setText(res);
         }
     }
 

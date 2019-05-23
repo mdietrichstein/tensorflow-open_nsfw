@@ -254,7 +254,7 @@ public abstract class Classifier {
         runInference();
         long endTime = SystemClock.uptimeMillis();
         Trace.endSection();
-        LOGGER.v("Timecost to run model inference: " + (endTime - startTime));
+        LOGGER.i("Timecost to run model inference: " + (endTime - startTime));
 
         // Find the best classifications.
         PriorityQueue<Recognition> pq =
