@@ -100,8 +100,7 @@ public class MainActivity extends AppCompatActivity
                     for (File imageFile : files) {
                         LOGGER.i("FileName:" + imageFile.getName());
                         Bitmap bitmap = BitmapFactory.decodeFile(imageFile.getAbsolutePath());
-                        Bitmap bm = Bitmap.createScaledBitmap(bitmap, classifier.getImageSizeX(), classifier.getImageSizeX(), false);
-                        final List<Classifier.Recognition> results = classifier.recognizeImage(bm);
+                        final List<Classifier.Recognition> results = classifier.recognizeImage(bitmap);
                         if (results != null) {
                             Classifier.Recognition recognition = results.get(0);
                             LOGGER.i(recognition.getTitle() + ":" + String.format("%f", recognition.getConfidence()));

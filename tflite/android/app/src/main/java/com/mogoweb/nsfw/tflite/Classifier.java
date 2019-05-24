@@ -15,6 +15,7 @@ package com.mogoweb.nsfw.tflite;
 import android.app.Activity;
 import android.content.res.AssetFileDescriptor;
 import android.graphics.Bitmap;
+import android.graphics.Matrix;
 import android.graphics.RectF;
 import android.os.SystemClock;
 import android.os.Trace;
@@ -30,9 +31,18 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.PriorityQueue;
+
+import org.opencv.android.OpenCVLoader;
+import org.opencv.imgproc.Imgproc;
 import org.tensorflow.lite.Interpreter;
+
+import com.mogoweb.nsfw.env.ImageUtils;
 import com.mogoweb.nsfw.env.Logger;
+
+import org.tensorflow.lite.Tensor;
 import org.tensorflow.lite.gpu.GpuDelegate;
+
+import static java.lang.Math.max;
 
 /** A classifier specialized to label images using TensorFlow Lite. */
 public abstract class Classifier {
@@ -187,6 +197,25 @@ public abstract class Classifier {
         }
         tfliteOptions.setNumThreads(numThreads);
         tflite = new Interpreter(tfliteModel, tfliteOptions);
+
+        Tensor tensor = tflite.getInputTensor(tflite.getInputIndex("input"));
+        String stringBuilder = " \n"
+                +"dataType : " +
+                tensor.dataType() +
+                "\n" +
+                "numBytes : " +
+                tensor.numBytes() +
+                "\n" +
+                "numDimensions : " +
+                tensor.numDimensions() +
+                "\n" +
+                "numElements : " +
+                tensor.numElements() +
+                "\n" +
+                "shape : " +
+                tensor.shape().length;
+        LOGGER.d(stringBuilder);
+
         labels = loadLabelList(activity);
         imgData =
                 ByteBuffer.allocateDirect(
@@ -196,6 +225,12 @@ public abstract class Classifier {
                                 * DIM_PIXEL_SIZE
                                 * getNumBytesPerChannel());
         imgData.order(ByteOrder.nativeOrder());
+
+        if (OpenCVLoader.initDebug()) {
+            LOGGER.d("OpenCv Initialization Success.");
+        } else {
+            LOGGER.e("OpenCv Initialization Error.");
+        }
         LOGGER.d("Created a Tensorflow Lite Image Classifier.");
     }
 
@@ -223,17 +258,22 @@ public abstract class Classifier {
     }
 
     /** Writes Image data into a {@code ByteBuffer}. */
-    private void convertBitmapToByteBuffer(Bitmap bitmap) {
+    private void convertBitmapToByteBuffer(Bitmap bitmap, int x_off, int y_off) {
         if (imgData == null) {
             return;
         }
         imgData.rewind();
-        bitmap.getPixels(intValues, 0, bitmap.getWidth(), 0, 0, bitmap.getWidth(), bitmap.getHeight());
+
+        Matrix m = new Matrix();
+        m.setScale(-1, 1);//水平翻转
+        Bitmap reversePic = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), m, true);
+        reversePic.getPixels(intValues, 0, getImageSizeX(), x_off, y_off, getImageSizeX(), getImageSizeY());
+
         // Convert the image to floating point.
         int pixel = 0;
         long startTime = SystemClock.uptimeMillis();
-        for (int i = 0; i < getImageSizeX(); ++i) {
-            for (int j = 0; j < getImageSizeY(); ++j) {
+        for (int i = x_off; i < getImageSizeX() + x_off; ++i) {
+            for (int j = y_off; j < getImageSizeY() + y_off; ++j) {
                 final int val = intValues[pixel++];
                 addPixelValue(val);
             }
@@ -248,7 +288,15 @@ public abstract class Classifier {
         Trace.beginSection("recognizeImage");
 
         Trace.beginSection("preprocessBitmap");
-        convertBitmapToByteBuffer(bitmap);
+        // resize to 256 x 256
+        Bitmap bm = ImageUtils.scaleBitmap(bitmap, 256, 256);
+        int W = bm.getWidth();
+        int H = bm.getHeight();
+
+        int w_off = max((W - getImageSizeX()) / 2, 0);
+        int h_off = max((H - getImageSizeY()) / 2, 0);
+
+        convertBitmapToByteBuffer(bitmap, w_off, h_off);
         Trace.endSection();
 
         // Run the inference call.
