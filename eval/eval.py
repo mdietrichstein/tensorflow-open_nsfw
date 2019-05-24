@@ -42,6 +42,7 @@ def test(first, second):
     result = {
         'min': np.amin(delta),
         'max': np.amax(delta),
+        'max-index': delta.argmax(),
         'median': np.median(delta),
         'mean': np.mean(delta),
         'std': np.std(delta),
@@ -80,7 +81,10 @@ def main(argv):
     other_classifications = classification_matrix(other)
 
     print('SFW:')
-    print(test(original_classifications[:, 0], other_classifications[:, 0]))
+    result = test(original_classifications[:, 0], other_classifications[:, 0]);
+    print(result)
+    index = result["max-index"]
+    print(original[index])
 
     print()
     print('NSFW:')

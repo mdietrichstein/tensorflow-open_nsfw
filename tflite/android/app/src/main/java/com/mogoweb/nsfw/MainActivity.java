@@ -7,6 +7,7 @@ import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Environment;
+import android.os.SystemClock;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.annotation.UiThread;
@@ -107,20 +108,19 @@ public class MainActivity extends AppCompatActivity
                             try {
                                 File outFile = new File("/sdcard/results.txt");
                                 FileWriter out = new FileWriter(outFile);
+                                out.append("File\tSFW Score\tNSFW Score\n");
 
+                                long startTime = SystemClock.uptimeMillis();
                                 for (File imageFile : files) {
-                                    LOGGER.i("FileName:" + imageFile.getName());
                                     Bitmap bitmap = BitmapFactory.decodeFile(imageFile.getAbsolutePath());
                                     final List<Classifier.Recognition> results = classifier.recognizeImage(bitmap);
                                     if (results != null) {
-                                        Classifier.Recognition recognition = results.get(0);
-                                        LOGGER.i(recognition.getTitle() + ":" + String.format("%f", recognition.getConfidence()));
-
-                                        Classifier.Recognition recognition1 = results.get(1);
-                                        LOGGER.i(recognition1.getTitle() + ":" + String.format("%f", recognition1.getConfidence()));
-                                        out.append(String.format("%f\t%f\n", recognition.getConfidence(), recognition1.getConfidence()));
+                                        out.append(String.format("%s\t%f\t%f\n", imageFile.getName(),
+                                                results.get(0).getConfidence(), results.get(1).getConfidence()));
                                     }
                                 }
+                                long endTime = SystemClock.uptimeMillis();
+                                LOGGER.i("Timecost to benchmark: " + (endTime - startTime));
                                 out.flush();
                                 out.close();
                             } catch (FileNotFoundException e) {
