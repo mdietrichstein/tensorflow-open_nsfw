@@ -15,16 +15,11 @@ package com.mogoweb.nsfw.tflite;
 import android.app.Activity;
 import android.graphics.Color;
 
-import com.mogoweb.nsfw.tflite.Classifier;
-
 import java.io.IOException;
 
 /** This TensorFlowLite classifier works with the float MobileNet model. */
 public class ClassifierFloat extends Classifier {
-
-    /** MobileNet requires additional normalization of the used input. */
-    private static final float IMAGE_MEAN = 127.5f;
-    private static final float IMAGE_STD = 127.5f;
+    private static final int VGG_MEAN[] = {123, 117, 104};
 
     /**
      * An array to hold inference results, to be feed into Tensorflow Lite as outputs. This isn't part
@@ -107,4 +102,3 @@ public class ClassifierFloat extends Classifier {
         tflite.run(imgData, labelProbArray);
     }
 }
-

@@ -19,6 +19,7 @@ import android.graphics.Matrix;
 import android.graphics.RectF;
 import android.os.SystemClock;
 import android.os.Trace;
+
 import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -33,7 +34,6 @@ import java.util.List;
 import java.util.PriorityQueue;
 
 import org.opencv.android.OpenCVLoader;
-import org.opencv.imgproc.Imgproc;
 import org.tensorflow.lite.Interpreter;
 
 import com.mogoweb.nsfw.env.ImageUtils;
@@ -60,9 +60,6 @@ public abstract class Classifier {
         NNAPI,
         GPU
     }
-
-    protected static final int VGG_MEAN[] = {123, 117, 104};
-
 
     /** Number of results to show in the UI. */
     private static final int MAX_RESULTS = 3;
@@ -258,22 +255,28 @@ public abstract class Classifier {
     }
 
     /** Writes Image data into a {@code ByteBuffer}. */
-    private void convertBitmapToByteBuffer(Bitmap bitmap, int x_off, int y_off) {
+    private void convertBitmapToByteBuffer(Bitmap bitmap) {
         if (imgData == null) {
             return;
         }
         imgData.rewind();
 
+        int W = bitmap.getWidth();
+        int H = bitmap.getHeight();
+
+        int w_off = max((W - getImageSizeX()) / 2, 0);
+        int h_off = max((H - getImageSizeY()) / 2, 0);
+
         Matrix m = new Matrix();
         m.setScale(-1, 1);//水平翻转
         Bitmap reversePic = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), m, true);
-        reversePic.getPixels(intValues, 0, getImageSizeX(), x_off, y_off, getImageSizeX(), getImageSizeY());
+        reversePic.getPixels(intValues, 0, getImageSizeX(), w_off, h_off, getImageSizeX(), getImageSizeY());
 
         // Convert the image to floating point.
         int pixel = 0;
         long startTime = SystemClock.uptimeMillis();
-        for (int i = x_off; i < getImageSizeX() + x_off; ++i) {
-            for (int j = y_off; j < getImageSizeY() + y_off; ++j) {
+        for (int i = h_off; i < getImageSizeX() + h_off; ++i) {
+            for (int j = w_off; j < getImageSizeY() + w_off; ++j) {
                 final int val = intValues[pixel++];
                 addPixelValue(val);
             }
@@ -290,13 +293,8 @@ public abstract class Classifier {
         Trace.beginSection("preprocessBitmap");
         // resize to 256 x 256
         Bitmap bm = ImageUtils.scaleBitmap(bitmap, 256, 256);
-        int W = bm.getWidth();
-        int H = bm.getHeight();
 
-        int w_off = max((W - getImageSizeX()) / 2, 0);
-        int h_off = max((H - getImageSizeY()) / 2, 0);
-
-        convertBitmapToByteBuffer(bitmap, w_off, h_off);
+        convertBitmapToByteBuffer(bm);
         Trace.endSection();
 
         // Run the inference call.
