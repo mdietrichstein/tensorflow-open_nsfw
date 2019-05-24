@@ -28,7 +28,11 @@ import com.mogoweb.nsfw.tflite.Classifier.Device;
 import com.mogoweb.nsfw.tflite.Classifier.Model;
 
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.util.Arrays;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity
@@ -97,20 +101,36 @@ public class MainActivity extends AppCompatActivity
                     File directory = new File(imagesPath);
                     File[] files = directory.listFiles();
                     LOGGER.i("images: "+ files.length);
-                    for (File imageFile : files) {
-                        LOGGER.i("FileName:" + imageFile.getName());
-                        Bitmap bitmap = BitmapFactory.decodeFile(imageFile.getAbsolutePath());
-                        final List<Classifier.Recognition> results = classifier.recognizeImage(bitmap);
-                        if (results != null) {
-                            Classifier.Recognition recognition = results.get(0);
-                            LOGGER.i(recognition.getTitle() + ":" + String.format("%f", recognition.getConfidence()));
+                    Arrays.sort(files);
+                    new Thread(new Runnable() {
+                        public void run() {
+                            try {
+                                File outFile = new File("/sdcard/results.txt");
+                                FileWriter out = new FileWriter(outFile);
 
-                            Classifier.Recognition recognition1 = results.get(1);
-                            LOGGER.i(recognition1.getTitle() + ":" + String.format("%f", recognition1.getConfidence()));
+                                for (File imageFile : files) {
+                                    LOGGER.i("FileName:" + imageFile.getName());
+                                    Bitmap bitmap = BitmapFactory.decodeFile(imageFile.getAbsolutePath());
+                                    final List<Classifier.Recognition> results = classifier.recognizeImage(bitmap);
+                                    if (results != null) {
+                                        Classifier.Recognition recognition = results.get(0);
+                                        LOGGER.i(recognition.getTitle() + ":" + String.format("%f", recognition.getConfidence()));
+
+                                        Classifier.Recognition recognition1 = results.get(1);
+                                        LOGGER.i(recognition1.getTitle() + ":" + String.format("%f", recognition1.getConfidence()));
+                                        out.append(String.format("%f\t%f\n", recognition.getConfidence(), recognition1.getConfidence()));
+                                    }
+                                }
+                                out.flush();
+                                out.close();
+                            } catch (FileNotFoundException e) {
+                                e.printStackTrace();
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
                         }
-                    }
+                    }).start();
                 }
-
             }
         });
 

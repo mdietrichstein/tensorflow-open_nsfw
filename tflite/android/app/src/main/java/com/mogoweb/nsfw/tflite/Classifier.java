@@ -21,7 +21,10 @@ import android.os.SystemClock;
 import android.os.Trace;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.ByteBuffer;
@@ -62,7 +65,7 @@ public abstract class Classifier {
     }
 
     /** Number of results to show in the UI. */
-    private static final int MAX_RESULTS = 3;
+    private static final int MAX_RESULTS = 2;
 
     /** Dimensions of inputs. */
     private static final int DIM_BATCH_SIZE = 1;
@@ -124,15 +127,11 @@ public abstract class Classifier {
          */
         private final Float confidence;
 
-        /** Optional location within the source image for the location of the recognized object. */
-        private RectF location;
-
         public Recognition(
-                final String id, final String title, final Float confidence, final RectF location) {
+                final String id, final String title, final Float confidence) {
             this.id = id;
             this.title = title;
             this.confidence = confidence;
-            this.location = location;
         }
 
         public String getId() {
@@ -145,14 +144,6 @@ public abstract class Classifier {
 
         public Float getConfidence() {
             return confidence;
-        }
-
-        public RectF getLocation() {
-            return new RectF(location);
-        }
-
-        public void setLocation(RectF location) {
-            this.location = location;
         }
 
         @Override
@@ -168,10 +159,6 @@ public abstract class Classifier {
 
             if (confidence != null) {
                 resultString += String.format("(%.1f%%) ", confidence * 100.0f);
-            }
-
-            if (location != null) {
-                resultString += location + " ";
             }
 
             return resultString.trim();
@@ -272,6 +259,23 @@ public abstract class Classifier {
         Bitmap reversePic = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), m, true);
         reversePic.getPixels(intValues, 0, getImageSizeX(), w_off, h_off, getImageSizeX(), getImageSizeY());
 
+//        FileOutputStream fOut;
+//        try {
+//            String tmp = "/sdcard/reverse1.jpg";
+//            fOut = new FileOutputStream(tmp);
+//            reversePic.compress(Bitmap.CompressFormat.JPEG, 100, fOut);
+//
+//            try {
+//                fOut.flush();
+//                fOut.close();
+//            } catch (IOException e) {
+//                e.printStackTrace();
+//            }
+//
+//        } catch (FileNotFoundException e) {
+//            e.printStackTrace();
+//        }
+
         // Convert the image to floating point.
         int pixel = 0;
         long startTime = SystemClock.uptimeMillis();
@@ -305,29 +309,13 @@ public abstract class Classifier {
         Trace.endSection();
         LOGGER.i("Timecost to run model inference: " + (endTime - startTime));
 
-        // Find the best classifications.
-        PriorityQueue<Recognition> pq =
-                new PriorityQueue<Recognition>(
-                        3,
-                        new Comparator<Recognition>() {
-                            @Override
-                            public int compare(Recognition lhs, Recognition rhs) {
-                                // Intentionally reversed to put high confidence at the head of the queue.
-                                return Float.compare(rhs.getConfidence(), lhs.getConfidence());
-                            }
-                        });
-        for (int i = 0; i < labels.size(); ++i) {
-            pq.add(
-                    new Recognition(
-                            "" + i,
-                            labels.size() > i ? labels.get(i) : "unknown",
-                            getNormalizedProbability(i),
-                            null));
-        }
         final ArrayList<Recognition> recognitions = new ArrayList<Recognition>();
-        int recognitionsSize = Math.min(pq.size(), MAX_RESULTS);
+        int recognitionsSize = Math.min(labels.size(), MAX_RESULTS);
         for (int i = 0; i < recognitionsSize; ++i) {
-            recognitions.add(pq.poll());
+            recognitions.add(new Recognition(
+                    "" + i,
+                    labels.size() > i ? labels.get(i) : "unknown",
+                    getNormalizedProbability(i)));
         }
         Trace.endSection();
         return recognitions;
