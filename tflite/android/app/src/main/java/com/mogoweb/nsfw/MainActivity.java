@@ -7,6 +7,8 @@ import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Environment;
+import android.os.Handler;
+import android.os.HandlerThread;
 import android.os.SystemClock;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
@@ -18,7 +20,9 @@ import android.os.Bundle;
 import android.text.SpannableString;
 import android.text.SpannableStringBuilder;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.Button;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -29,6 +33,7 @@ import com.mogoweb.nsfw.tflite.Classifier.Device;
 import com.mogoweb.nsfw.tflite.Classifier.Model;
 
 import java.io.File;
+import java.io.FileFilter;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -37,23 +42,27 @@ import java.util.Arrays;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity
-        implements ActivityCompat.OnRequestPermissionsResultCallback {
+        implements ActivityCompat.OnRequestPermissionsResultCallback,
+                    AdapterView.OnItemSelectedListener {
     private static final Logger LOGGER = new Logger();
 
     private static final int REQUEST_CAMERA = 0;
     private static final int SELECT_FILE = 1;
-
-    private static final int PERMISSION_REQUEST_CAMERA = 0;
 
     private static final String TAG = "AIDog";
 
     private Classifier classifier;
 
     private TextView tvResult;
+    private Spinner modelSpinner;
+    private Spinner deviceSpinner;
 
     private View mLayout;
 
-    private Model model = Model.FLOAT;
+    private Handler handler;
+    private HandlerThread handlerThread;
+
+    private Model model = Model.QUANTIZED;
     private Device device = Device.CPU;
     private int numThreads = -1;
 
@@ -69,13 +78,9 @@ public class MainActivity extends AppCompatActivity
             @Override
             public void onClick(View view) {
                 // Check if the Camera permission has been granted
-                if (ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.CAMERA)
-                        == PackageManager.PERMISSION_GRANTED) {
+                if (Utility.checkCameraPermission(MainActivity.this)) {
                     // Permission is already available, start camera
                     cameraIntent();
-                } else {
-                    // Permission is missing and must be requested.
-                    requestCameraPermission();
                 }
             }
         });
@@ -83,7 +88,7 @@ public class MainActivity extends AppCompatActivity
         btnSelectPhoto.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                boolean result = Utility.checkPermission(MainActivity.this);
+                boolean result = Utility.checkStoragePermission(MainActivity.this);
                 if (result)
                     galleryIntent();
             }
@@ -94,77 +99,59 @@ public class MainActivity extends AppCompatActivity
         btnBenchmarkImages.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                boolean result = Utility.checkPermission(MainActivity.this);
+                boolean result = Utility.checkStoragePermission(MainActivity.this);
                 if (result) {
-                    File extStore = Environment.getExternalStorageDirectory();
-                    // ==> /storage/emulated/0/note.txt
-                    String imagesPath = extStore.getAbsolutePath() + "/images";
-                    File directory = new File(imagesPath);
-                    File[] files = directory.listFiles();
-                    LOGGER.i("images: "+ files.length);
-                    Arrays.sort(files);
-                    new Thread(new Runnable() {
-                        public void run() {
-                            try {
-                                File outFile = new File("/sdcard/results.txt");
-                                FileWriter out = new FileWriter(outFile);
-                                out.append("File\tSFW Score\tNSFW Score\n");
-
-                                long startTime = SystemClock.uptimeMillis();
-                                for (File imageFile : files) {
-                                    Bitmap bitmap = BitmapFactory.decodeFile(imageFile.getAbsolutePath());
-                                    final List<Classifier.Recognition> results = classifier.recognizeImage(bitmap);
-                                    if (results != null) {
-                                        out.append(String.format("%s\t%f\t%f\n", imageFile.getName(),
-                                                results.get(0).getConfidence(), results.get(1).getConfidence()));
-                                    }
-                                }
-                                long endTime = SystemClock.uptimeMillis();
-                                LOGGER.i("Timecost to benchmark: " + (endTime - startTime));
-                                out.flush();
-                                out.close();
-                            } catch (FileNotFoundException e) {
-                                e.printStackTrace();
-                            } catch (IOException e) {
-                                e.printStackTrace();
-                            }
-                        }
-                    }).start();
+                    benchmarkIntent();
                 }
             }
         });
 
+        modelSpinner = findViewById(R.id.model_spinner);
+        modelSpinner.setOnItemSelectedListener(this);
+        deviceSpinner= findViewById(R.id.device_spinner);
+        deviceSpinner.setOnItemSelectedListener(this);
+
         recreateClassifier(getModel(), getDevice(), getNumThreads());
     }
 
-    /**
-     * Requests the {@link android.Manifest.permission#CAMERA} permission.
-     * If an additional rationale should be displayed, the user has to launch the request from
-     * a SnackBar that includes additional information.
-     */
-    private void requestCameraPermission() {
-        // Permission has not been granted and must be requested.
-        if (ActivityCompat.shouldShowRequestPermissionRationale(this,
-                Manifest.permission.CAMERA)) {
-            // Provide an additional rationale to the user if the permission was not granted
-            // and the user would benefit from additional context for the use of the permission.
-            // Display a SnackBar with cda button to request the missing permission.
-            Snackbar.make(mLayout, R.string.camera_access_required,
-                    Snackbar.LENGTH_INDEFINITE).setAction(R.string.ok, new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-                    // Request the permission
-                    ActivityCompat.requestPermissions(MainActivity.this,
-                            new String[]{Manifest.permission.CAMERA},
-                            PERMISSION_REQUEST_CAMERA);
-                }
-            }).show();
+    @Override
+    public synchronized void onResume() {
+        LOGGER.d("onResume " + this);
+        super.onResume();
 
-        } else {
-            // Request the permission. The result will be received in onRequestPermissionResult().
-            ActivityCompat.requestPermissions(this,
-                    new String[]{Manifest.permission.CAMERA}, PERMISSION_REQUEST_CAMERA);
+        handlerThread = new HandlerThread("inference");
+        handlerThread.start();
+        handler = new Handler(handlerThread.getLooper());
+    }
+
+    @Override
+    public synchronized void onPause() {
+        LOGGER.d("onPause " + this);
+
+        handlerThread.quitSafely();
+        try {
+            handlerThread.join();
+            handlerThread = null;
+            handler = null;
+        } catch (final InterruptedException e) {
+            LOGGER.e(e, "Exception!");
         }
+
+        super.onPause();
+    }
+
+    @Override
+    public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
+        if (adapterView == modelSpinner) {
+            setModel(Model.valueOf(adapterView.getItemAtPosition(i).toString().toUpperCase()));
+        } else if (adapterView == deviceSpinner) {
+            setDevice(Device.valueOf(adapterView.getItemAtPosition(i).toString()));
+        }
+    }
+
+    @Override
+    public void onNothingSelected(AdapterView<?> adapterView) {
+
     }
 
     private void cameraIntent()
@@ -181,11 +168,70 @@ public class MainActivity extends AppCompatActivity
         startActivityForResult(Intent.createChooser(intent, "Select File"), SELECT_FILE);
     }
 
+    private void benchmarkIntent()
+    {
+        File extStore = Environment.getExternalStorageDirectory();
+        // ==> /storage/emulated/0/note.txt
+        String imagesPath = extStore.getAbsolutePath() + "/images";
+        File directory = new File(imagesPath);
+        if (!directory.exists()) {
+            showToast("/sdcard/images directory not exists");
+            return;
+        }
+        File[] files = directory.listFiles(new FileFilter() {
+            @Override
+            public boolean accept(File file) {
+                return (file.getPath().endsWith(".jpg") || file.getPath().endsWith(".jpeg"));
+            }
+        });
+        LOGGER.i("images: "+ files.length);
+        if (files.length == 0) {
+            showToast("no jpeg images in /sdcard/images");
+            return;
+        }
+
+        Arrays.sort(files);
+        runInBackground(
+            new Thread(new Runnable() {
+                public void run() {
+                    try {
+                        File extStore = Environment.getExternalStorageDirectory();
+                        File outFile = new File(extStore.getAbsolutePath(), "results.txt");
+                        FileWriter out = new FileWriter(outFile);
+                        out.append("File\tSFW Score\tNSFW Score\n");
+
+                        long startTime = SystemClock.uptimeMillis();
+                        for (File imageFile : files) {
+                            Bitmap bitmap = BitmapFactory.decodeFile(imageFile.getAbsolutePath());
+                            final List<Classifier.Recognition> results = classifier.recognizeImage(bitmap);
+                            if (results != null) {
+                                out.append(String.format("%s\t%f\t%f\n", imageFile.getName(),
+                                        results.get(0).getConfidence(), results.get(1).getConfidence()));
+                            }
+                        }
+                        long endTime = SystemClock.uptimeMillis();
+                        LOGGER.i("Timecost to benchmark: " + (endTime - startTime));
+                        out.flush();
+                        out.close();
+                    } catch (FileNotFoundException e) {
+                        e.printStackTrace();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }));
+    }
+
+    protected synchronized void runInBackground(final Runnable r) {
+        if (handler != null) {
+            handler.post(r);
+        }
+    }
+
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
                                            @NonNull int[] grantResults) {
-        // BEGIN_INCLUDE(onRequestPermissionsResult)
-        if (requestCode == PERMISSION_REQUEST_CAMERA) {
+        if (requestCode == Utility.MY_PERMISSIONS_REQUEST_CAMERA) {
             // Request for camera permission.
             if (grantResults.length == 1 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 // Permission has been granted. Start camera.
@@ -196,8 +242,17 @@ public class MainActivity extends AppCompatActivity
                         Snackbar.LENGTH_SHORT)
                         .show();
             }
+        } else if (requestCode == Utility.MY_PERMISSIONS_REQUEST_READ_EXTERNAL_STORAGE) {
+            if (grantResults.length == 1 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                // Permission has been granted. Start camera.
+                benchmarkIntent();
+            } else {
+                // Permission request was denied.
+                Snackbar.make(mLayout, R.string.storage_permission_denied,
+                        Snackbar.LENGTH_SHORT)
+                        .show();
+            }
         }
-        // END_INCLUDE(onRequestPermissionsResult)
     }
 
     @Override
@@ -217,20 +272,7 @@ public class MainActivity extends AppCompatActivity
      * @param s The message to show
      */
     private void showToast(String s) {
-        SpannableStringBuilder builder = new SpannableStringBuilder();
-        SpannableString str1 = new SpannableString(s);
-        builder.append(str1);
-        showToast(builder);
-    }
-
-    private void showToast(final SpannableStringBuilder builder) {
-        runOnUiThread(
-                new Runnable() {
-                    @Override
-                    public void run() {
-                        tvResult.setText(builder, TextView.BufferType.SPANNABLE);
-                    }
-                });
+        Toast.makeText(this, s, Toast.LENGTH_SHORT).show();
     }
 
     @SuppressWarnings("deprecation")
@@ -309,6 +351,7 @@ public class MainActivity extends AppCompatActivity
         if (this.model != model) {
             LOGGER.d("Updating  model: " + model);
             this.model = model;
+            runInBackground(() -> recreateClassifier(getModel(), getDevice(), getNumThreads()));
         }
     }
 
@@ -320,7 +363,7 @@ public class MainActivity extends AppCompatActivity
         if (this.device != device) {
             LOGGER.d("Updating  device: " + device);
             this.device = device;
-            final boolean threadsEnabled = device == Device.CPU;
+            runInBackground(() -> recreateClassifier(getModel(), getDevice(), getNumThreads()));
         }
     }
 

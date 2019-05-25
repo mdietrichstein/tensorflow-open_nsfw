@@ -3,8 +3,9 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/container"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
+    android:layout_height="wrap_content"
     android:orientation="vertical"
+    android:gravity="center_horizontal"
     android:padding="10dp"
     tools:context=".MainActivity" >
 
@@ -66,4 +67,45 @@
             android:layout_height="wrap_content"
             android:text="benchmark /sdcard/images/" />
     </LinearLayout>
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:text="@string/model"
+            android:textColor="@android:color/black" />
+
+        <Spinner
+            android:id="@+id/model_spinner"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:layout_alignParentRight="true"
+            android:entries="@array/models"
+            android:prompt="@string/model" />
+    </RelativeLayout>
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:text="@string/device"
+            android:textColor="@android:color/black" />
+
+        <Spinner
+            android:id="@+id/device_spinner"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:layout_alignParentRight="true"
+            android:entries="@array/devices"
+            android:prompt="@string/device" />
+    </RelativeLayout>
 </LinearLayout>

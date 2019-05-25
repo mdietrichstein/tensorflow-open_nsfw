@@ -72,6 +72,8 @@ public abstract class Classifier {
 
     private static final int DIM_PIXEL_SIZE = 3;
 
+    protected static final int VGG_MEAN[] = {123, 117, 104};
+
     /** Preallocated buffers for storing image data in. */
     private final int[] intValues = new int[getImageSizeX() * getImageSizeY()];
 

@@ -19,7 +19,6 @@ import java.io.IOException;
 
 /** This TensorFlowLite classifier works with the float MobileNet model. */
 public class ClassifierFloat extends Classifier {
-    private static final int VGG_MEAN[] = {123, 117, 104};
 
     /**
      * An array to hold inference results, to be feed into Tensorflow Lite as outputs. This isn't part

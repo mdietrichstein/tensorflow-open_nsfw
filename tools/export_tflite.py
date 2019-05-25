@@ -29,6 +29,10 @@ if __name__ == "__main__":
     parser.add_argument("-m", "--model_weights", required=True,
                         help="Path to trained model weights file")
 
+    parser.add_argument("-q", "--quantization", required=False,
+                        action='store_true', default=False,
+                        help="quantize model")
+
     args = parser.parse_args()
 
     model = OpenNsfwModel()
@@ -42,7 +46,9 @@ if __name__ == "__main__":
 
         sess.run(tf.global_variables_initializer())
 
-        converter = tf.contrib.lite.TFLiteConverter.from_session(sess, [model.input], [model.predictions])
+        converter = tf.lite.TFLiteConverter.from_session(sess, [model.input], [model.predictions])
+        if args.quantization:
+            converter.post_training_quantize = True
         tflite_model = converter.convert()
 
         with open(export_path, "wb") as f:

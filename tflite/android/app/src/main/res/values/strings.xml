@@ -6,4 +6,17 @@
     <string name="camera_access_required">Camera access is required to take a photo.</string>
     <string name="ok">OK</string>
     <string name="camera_permission_denied">Camera permission request was denied. You cannot take a photo!</string>
+    <string name="storage_permission_denied">Storage permission request was denied. You cannot visit images on storage!</string>
+    <string name="model">Model:</string>
+    <string-array name="models">
+        <item>Quantized</item>
+        <item>Float</item>
+    </string-array>
+
+    <string name="device">Device:</string>
+    <string-array name="devices">
+        <item>CPU</item>
+        <item>GPU</item>
+        <item>NNAPI</item>
+    </string-array>
 </resources>

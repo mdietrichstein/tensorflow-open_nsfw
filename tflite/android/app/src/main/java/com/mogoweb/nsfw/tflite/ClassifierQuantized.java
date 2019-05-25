@@ -13,6 +13,7 @@ limitations under the License.
 package com.mogoweb.nsfw.tflite;
 
 import android.app.Activity;
+import android.graphics.Color;
 
 import com.mogoweb.nsfw.tflite.Classifier;
 
@@ -25,7 +26,7 @@ public class ClassifierQuantized extends Classifier {
      * An array to hold inference results, to be feed into Tensorflow Lite as outputs. This isn't part
      * of the super class, because we need a primitive array here.
      */
-    private byte[][] labelProbArray = null;
+    private float[][] labelProbArray = null;
 
     /**
      * Initializes a {@code ClassifierQuantized}.
@@ -35,7 +36,7 @@ public class ClassifierQuantized extends Classifier {
     public ClassifierQuantized(Activity activity, Device device, int numThreads)
             throws IOException {
         super(activity, device, numThreads);
-        labelProbArray = new byte[1][getNumLabels()];
+        labelProbArray = new float[1][getNumLabels()];
     }
 
     @Override
@@ -64,14 +65,23 @@ public class ClassifierQuantized extends Classifier {
     @Override
     protected int getNumBytesPerChannel() {
         // the quantized model uses a single byte only
-        return 1;
+        return 4;
     }
 
     @Override
     protected void addPixelValue(int pixelValue) {
-        imgData.put((byte) ((pixelValue >> 16) & 0xFF));
-        imgData.put((byte) ((pixelValue >> 8) & 0xFF));
-        imgData.put((byte) (pixelValue & 0xFF));
+        final int color = pixelValue;
+        int r1 = Color.red(color);
+        int g1 = Color.green(color);
+        int b1 = Color.blue(color);
+
+        int rr1 = r1 - VGG_MEAN[0];
+        int gg1 = g1 - VGG_MEAN[1];
+        int bb1 = b1 - VGG_MEAN[2];
+
+        imgData.putFloat(bb1);
+        imgData.putFloat(gg1);
+        imgData.putFloat(rr1);
     }
 
     @Override
@@ -81,12 +91,12 @@ public class ClassifierQuantized extends Classifier {
 
     @Override
     protected void setProbability(int labelIndex, Number value) {
-        labelProbArray[0][labelIndex] = value.byteValue();
+        labelProbArray[0][labelIndex] = value.floatValue();
     }
 
     @Override
     protected float getNormalizedProbability(int labelIndex) {
-        return (labelProbArray[0][labelIndex] & 0xff) / 255.0f;
+        return labelProbArray[0][labelIndex];
     }
 
     @Override
