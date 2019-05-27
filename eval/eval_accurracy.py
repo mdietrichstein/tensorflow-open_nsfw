@@ -2,7 +2,6 @@ import sys
 import operator
 import argparse
 import numpy as np
-from scipy import stats
 
 
 def load_classifications(filename):
@@ -53,6 +52,12 @@ def main(argv):
     parser.add_argument("input",
                         help="File containing classifications")
 
+    parser.add_argument("-n", "--nsfw",
+                        help="write out wrong NSFW classifications to file")
+
+    parser.add_argument("-s", "--sfw",
+                        help="write out wrong SFW classifications to file")
+
     args = parser.parse_args()
     filename_input = args.input
 
@@ -64,8 +69,16 @@ def main(argv):
 
     classifications = classification_matrix(result)
 
-    result = test_acc(classifications[:, 1]);
-    print(result)
+    acc_res = test_acc(classifications[:, 1]);
+    print(acc_res)
+
+    if args.nsfw:
+        i = 0
+        with open(args.nsfw, 'w') as o:
+            for v in classifications[:, 1]:
+                if v < 0.7:
+                    o.write('{}\n'.format(result[i][0]))
+                i += 1
 
 
 if __name__ == "__main__":
