@@ -213,6 +213,16 @@ public class MainActivity extends AppCompatActivity
                         LOGGER.i("Timecost to benchmark: " + (endTime - startTime));
                         out.flush();
                         out.close();
+
+                        runOnUiThread(
+                                new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        Toast.makeText(MainActivity.this,
+                                                "Finish benchmarking.", Toast.LENGTH_SHORT).show();
+                                    }
+                                }
+                        );
                     } catch (FileNotFoundException e) {
                         e.printStackTrace();
                     } catch (IOException e) {
