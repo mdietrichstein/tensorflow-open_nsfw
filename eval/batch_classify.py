@@ -64,7 +64,7 @@ def main(argv):
     input_type = InputType.TENSOR
     model = OpenNsfwModel()
 
-    filenames = glob.glob(args.source + "/*.jpg")
+    filenames = sorted(glob.glob(args.source + "/*.jpg"))
     num_files = len(filenames)
 
     num_batches = int(num_files / batch_size)

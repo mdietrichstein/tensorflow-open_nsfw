@@ -20,7 +20,7 @@ if __name__ == "__main__":
 
     parser.add_argument("target", help="output filename, e.g. 'open_nsfw.tflite'")
 
-    parser.add_argument("-i", "--input_type", required=True,
+    parser.add_argument("-i", "--input_type", required=False,
                         default=InputType.TENSOR.name.lower(),
                         help="Input type. Warning: base64_jpeg does not work with the standard TFLite runtime since a lot of operations are not supported",
                         choices=[InputType.TENSOR.name.lower(),
@@ -28,6 +28,10 @@ if __name__ == "__main__":
 
     parser.add_argument("-m", "--model_weights", required=True,
                         help="Path to trained model weights file")
+
+    parser.add_argument("-q", "--quantization", required=False,
+                        action='store_true', default=False,
+                        help="quantize model")
 
     args = parser.parse_args()
 
@@ -42,7 +46,9 @@ if __name__ == "__main__":
 
         sess.run(tf.global_variables_initializer())
 
-        converter = tf.contrib.lite.TFLiteConverter.from_session(sess, [model.input], [model.predictions])
+        converter = tf.lite.TFLiteConverter.from_session(sess, [model.input], [model.predictions])
+        if args.quantization:
+            converter.post_training_quantize = True
         tflite_model = converter.convert()
 
         with open(export_path, "wb") as f:
