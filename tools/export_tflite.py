@@ -36,13 +36,13 @@ if __name__ == "__main__":
     export_path = args.target
     input_type = InputType[args.input_type.upper()]
 
-    with tf.Session() as sess:
+    with tf.compat.v1.Session() as sess:
         model.build(weights_path=args.model_weights,
                     input_type=input_type)
 
-        sess.run(tf.global_variables_initializer())
+        sess.run(tf.compat.v1.global_variables_initializer())
 
-        converter = tf.contrib.lite.TFLiteConverter.from_session(sess, [model.input], [model.predictions])
+        converter = tf.compat.v1.lite.TFLiteConverter.from_session(sess, [model.input], [model.predictions])
         tflite_model = converter.convert()
 
         with open(export_path, "wb") as f:
