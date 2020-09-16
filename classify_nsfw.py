@@ -38,7 +38,7 @@ def main(argv):
 
     model = OpenNsfwModel()
 
-    with tf.Session() as sess:
+    with tf.compat.v1.Session() as sess:
 
         input_type = InputType[args.input_type.upper()]
         model.build(weights_path=args.model_weights, input_type=input_type)
@@ -54,7 +54,7 @@ def main(argv):
             import base64
             fn_load_image = lambda filename: np.array([base64.urlsafe_b64encode(open(filename, "rb").read())])
 
-        sess.run(tf.global_variables_initializer())
+        sess.run(tf.compat.v1.global_variables_initializer())
 
         image = fn_load_image(args.input_file)
 
